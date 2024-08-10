@@ -23,12 +23,12 @@ const ThreeCanvas = ({ image }) => {
     for (let i = 0; i < 4; i += 1) {
       const uvX = guides[i].x;
       const uvY = 1 - guides[i].y;
-      console.log(uvX, uvY);
+      //console.log(uvX, uvY);
 
       planeRef.current.geometry.attributes.uv.setXY(i, uvX, uvY);
       //planeRef.current.geometry.attributes.uv.setY(i, 0);
     }
-    console.log(planeRef.current.geometry.attributes.uv);
+    //console.log(planeRef.current.geometry.attributes.uv);
 
     planeRef.current.geometry.attributes.uv.needsUpdate = true;
   };

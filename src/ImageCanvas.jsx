@@ -5,12 +5,14 @@ import { OrbitControls } from '@react-three/drei';
 import {
   BufferGeometry,
   Float32BufferAttribute,
+  Matrix4,
   Mesh,
   MeshBasicMaterial,
   Plane,
   PlaneGeometry,
   Raycaster,
   TextureLoader,
+  Vector2,
   Vector3,
 } from 'three';
 
@@ -22,7 +24,6 @@ const DraggableVertex = ({ position, onDrag, planeNormal, planePoint }) => {
     event.stopPropagation();
     setIsDragging(true);
     event.target.setPointerCapture(event.pointerId);
-    console.log('pointer down');
   };
 
   const handlePointerUp = (event) => {
@@ -71,18 +72,18 @@ const PlaneFromVertices = ({ vertices }) => {
 
   const updateGeometry = () => {
     const positions = new Float32Array([
+      vertices[2].x,
+      vertices[2].y,
+      vertices[2].z,
+      vertices[1].x,
+      vertices[1].y,
+      vertices[1].z,
       vertices[0].x,
       vertices[0].y,
       vertices[0].z,
       vertices[1].x,
       vertices[1].y,
       vertices[1].z,
-      vertices[2].x,
-      vertices[2].y,
-      vertices[2].z,
-      vertices[0].x,
-      vertices[0].y,
-      vertices[0].z,
       vertices[2].x,
       vertices[2].y,
       vertices[2].z,
@@ -108,14 +109,15 @@ const PlaneFromVertices = ({ vertices }) => {
 };
 
 const ImageCanvas = ({ image }) => {
-  const { guides } = useGuideContext();
+  const { guides, setGuides } = useGuideContext();
   const texture = useLoader(TextureLoader, image);
+  const imageRef = useRef();
 
   const [vertices, setVertices] = useState([
+    new Vector3(0, 1, 0),
+    new Vector3(1, 1, 0),
     new Vector3(0, 0, 0),
     new Vector3(1, 0, 0),
-    new Vector3(1, 1, 0),
-    new Vector3(0, 1, 0),
   ]);
 
   const planeNormal = new Vector3(0, 0, 1);
@@ -125,6 +127,24 @@ const ImageCanvas = ({ image }) => {
     setVertices((prev) =>
       prev.map((vertex, i) => (i === index ? newPosition : vertex))
     );
+
+    if (imageRef.current) {
+      console.log(index);
+      const positions = imageRef.current.geometry.attributes.position.array;
+      const topLeft = new Vector2(positions[0], positions[1]);
+      const bottomRight = new Vector2(
+        positions[positions.length - 3],
+        positions[positions.length - 2]
+      );
+
+      const x =
+        (newPosition.x - topLeft.x) / Math.abs(bottomRight.x - topLeft.x);
+      const y = (newPosition.y - topLeft.y) / (bottomRight.y - topLeft.y);
+
+      setGuides((prev) =>
+        prev.map((guide, i) => (i === index ? { x, y } : guide))
+      );
+    }
   };
   return (
     <div className="half-screen">
@@ -137,7 +157,7 @@ const ImageCanvas = ({ image }) => {
       <Canvas>
         <OrbitControls enableRotate={false} />
         <ambientLight />
-        <mesh>
+        <mesh ref={imageRef}>
           <planeGeometry
             attach="geometry"
             args={[texture.image.width / 100, texture.image.height / 100, 1, 1]}
